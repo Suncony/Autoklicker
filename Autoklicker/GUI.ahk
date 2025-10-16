@@ -1,6 +1,6 @@
 ﻿#Requires AutoHotkey v2.0
 
-version := "v1.03"
+version := "v1.0.3"
 title := "Autoklicker " version
 
 MacroGUI := Gui(, title)
@@ -196,4 +196,5 @@ showHelpGUI(*) {
     )
 
     HelpGUI.Show()
+
 }
