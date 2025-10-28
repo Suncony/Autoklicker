@@ -25,4 +25,5 @@ For compatibility reasons, Autoklicker's max speed is only 41 cps
 Intervals are rounded up due to the OS:
 - 1 - 20 ms: 41 cps
 - 20 - 35 ms: 31 cps
-- 40 - ~50 ms: 21 cps
+- 35 - 45 ms: 21 cps
+- ~50 ms: 16 cps
