@@ -1,18 +1,7 @@
 ﻿#Requires AutoHotkey v2.0
 
-version := "v1.0.3"
+version := "v1.1.0"
 title := "Autoklicker " version
-
-MacroGUI := Gui(, title)
-MacroGUI.SetFont(, "Consolas")
-MacroGUI.OnEvent("Close", (*) => ExitApp())
-MacroGUI.OnEvent("Size", minimizeToTray)
-minimizeToTray(GuiObj, MinMax, *) {
-    if MinMax == -1 {
-        A_IconHidden := false
-        GuiObj.Hide()
-    }
-}
 
 A_TrayMenu.Delete()
 A_TrayMenu.Add("Restore", restore)
@@ -26,29 +15,65 @@ A_TrayMenu.ClickCount := 1
 TraySetIcon("icon.ico")
 A_IconTip := title
 
+MacroGUI := Gui(, title)
+MacroGUI.SetFont(, "Consolas")
+MacroGUI.OnEvent("Close", (*) => ExitApp())
+MacroGUI.OnEvent("Size", minimizeToTray)
+minimizeToTray(GuiObj, MinMax, *) {
+    if MinMax == -1 {
+        A_IconHidden := false
+        GuiObj.Hide()
+    }
+}
+
+Tabs := MacroGUI.Add("Tab3", , ["Hotkeys", "Settings"])
+
+; HOTKEYS TAB
+Tabs.UseTab("Hotkeys")
+
 button_width := "w70"
 button_height := "r2"
 button_spacing := "y+5"
 
-SetButton := MacroGUI.Add("Button", button_width " " button_height " " button_spacing, "SET")
-SetButton.OnEvent("Click", showSetGUI)
-
-DeleteButton := MacroGUI.Add("Button", button_width " " button_height " " button_spacing, "DELETE")
-DeleteButton.OnEvent("Click", showDeleteGUI)
-
-SaveButton := MacroGUI.Add("Button", button_width " " button_height " " button_spacing, "SAVE")
-SaveButton.OnEvent("Click", GUISaveKeys)
-
-HelpButton := MacroGUI.Add("Button", button_width " " button_height " " button_spacing, "MANUAL")
-HelpButton.OnEvent("Click", showHelpGUI)
-
-MacroGUI.Add("Text", "ys", "Bound hotkey(s):")
-KeyList := MacroGUI.Add("ListBox", "w200 r7 ReadOnly VScroll")
+MacroGUI.Add("Text", "Section", "Bound hotkey(s):")
+KeyList := MacroGUI.Add("ListBox", "w200 r6 ReadOnly VScroll")
 updateKeyList()
 
-AutoklickerMode := MacroGUI.Add("Checkbox", "xp+40 y+20", "Autoklicker mode")
-AutoklickerMode.Value := manager.autoklicker
+SetButton := MacroGUI.Add("Button", "ys yp " button_width " " button_height, "SET KEY")
+SetButton.OnEvent("Click", showSetGUI)
+
+DeleteButton := MacroGUI.Add("Button", "y+8 " button_width " " button_height, "DELETE KEY")
+DeleteButton.OnEvent("Click", showDeleteGUI)
+
+; SETTINGS TAB
+Tabs.UseTab("Settings")
+
+MacroGUI.Add("GroupBox", "w280 r3", "Preset Keys")
+
+MacroGUI.Add("Text", "Section xp+10 yp+18", "Toggle:")
+ToggleKeyEdit := MacroGUI.Add("Edit", "w60 ReadOnly", IniRead("settings.ini", "KEYBINDS", "toggle_key"))
+
+MacroGUI.Add("Text", "ys x+39", "Reload:")
+ReloadKeyEdit := MacroGUI.Add("Edit", "w60 ReadOnly", IniRead("settings.ini", "KEYBINDS", "reload_key"))
+
+MacroGUI.Add("Text", "ys x+39", "ExitApp:")
+ExitAppKeyEdit := MacroGUI.Add("Edit", "w60 ReadOnly", IniRead("settings.ini", "KEYBINDS", "exitapp_key"))
+
+AutoklickerMode := MacroGUI.Add("Checkbox", "Section xm+18 ym+104", "Autoklicker mode")
+AutoklickerMode.Value := IniRead("settings.ini", "SETTINGS", "autoklicker")
 AutoklickerMode.OnEvent("Click", toggleAutoklicker)
+
+PresetKeysButton := MacroGUI.Add("Button", "w130 r1 yp-5 x+25", "Change preset keys")
+PresetKeysButton.OnEvent("Click", showPresetKeysGUI)
+
+; SAVE BUTTON
+Tabs.UseTab()
+
+SaveButton := MacroGUI.Add("Button", "w149 r1", "SAVE")
+SaveButton.OnEvent("Click", GUISaveSettings)
+
+HelpButton := MacroGUI.Add("Button", "yp x+5 w149 r1", "HOW TO USE")
+HelpButton.OnEvent("Click", showHelpGUI)
 
 MacroGUI.Show()
 
@@ -69,8 +94,7 @@ showSetGUI(*) {
     SetGUI.Add("Edit", "vKeyDelay w80 Limit4", "500")
     SetGUI.Add("Text", "x+0 yp+3", "ms")
 
-    AddConfirmButton := SetGUI.Add("Button", "Default xs y+10 w50", "Done")
-    AddConfirmButton.OnEvent("Click", setEnteredKey)
+    SetGUI.Add("Button", "Default xs y+10 w50", "Done").OnEvent("Click", setEnteredKey)
 
     SetGUI.Show()
 
@@ -84,7 +108,7 @@ showSetGUI(*) {
         try 
             manager.setKey(name, interval, delay)
         catch as err {
-            MsgBox(err.Message, title)
+            MsgBox("Error: " err.Message, title)
             return
         }
 
@@ -102,11 +126,9 @@ showDeleteGUI(*) {
     DeleteGUI.Add("Text", "ym+3 r2", "Enter key name: ")
     DeleteGUI.Add("Edit", "vKeyName x+0 yp-2 w80 Limit")
 
-    DeleteConfirmButton := DeleteGUI.Add("Button", "Default xs y+10 w50", "Done")
-    DeleteConfirmButton.OnEvent("Click", deleteEnteredKey)
+    DeleteGUI.Add("Button", "Default xs y+10 w50", "Done").OnEvent("Click", deleteEnteredKey)
 
-    DeleteAllButton := DeleteGUI.Add("Button", "x+40 w80", "Delete all")
-    DeleteAllButton.OnEvent("Click", deleteAllKeys)
+    DeleteGUI.Add("Button", "x+40 w80", "Delete all").OnEvent("Click", deleteAllKeys)
 
     DeleteGUI.Show()
 
@@ -118,7 +140,7 @@ showDeleteGUI(*) {
         try 
             manager.deleteKey(name)
         catch as err {
-            MsgBox(err.Message, title)
+            MsgBox("Error: " err.Message, title)
             return
         }
 
@@ -133,9 +155,56 @@ showDeleteGUI(*) {
     }
 }
 
-GUISaveKeys(*) {
+showPresetKeysGUI(*) {
+
+    PresetKeysGUI := Gui(, title)
+    PresetKeysGUI.SetFont(, "Consolas")
+    PresetKeysGUI.OnEvent("Close", (*) => PresetKeysGUI.Destroy())
+
+    PresetKeysGUI.Add("Text", "w80", "Toggle:")
+    PresetKeysGUI.Add("Edit", "vToggleKey w60 Lowercase Limit", manager.toggle_key)
+    PresetKeysGUI.Add("Text", "ys w80", "Reload:")
+    PresetKeysGUI.Add("Edit", "vReloadKey w60 Lowercase Limit", manager.reload_key)
+    PresetKeysGUI.Add("Text", "ys w80", "ExitApp: ")
+    PresetKeysGUI.Add("Edit", "vExitAppKey w60 Lowercase Limit", manager.exitapp_key)
+
+    PresetKeysGUI.Add("Button", "Default xs y+10 w50", "Apply").OnEvent("Click", applyPresetKeys)
+
+    PresetKeysGUI.Show()
+
+    applyPresetKeys(*) {
+
+        Value := PresetKeysGUI.Submit(false)
+        toggle_name := Value.ToggleKey
+        reload_name := Value.ReloadKey
+        exitapp_name := Value.ExitAppKey
+        arr := [toggle_name, reload_name, exitapp_name]
+
+        try {
+            manager.checkDuplicatePresetKeys(arr)
+            manager.bindPresetKey("toggle", toggle_name)
+            manager.bindPresetKey("reload", reload_name)
+            manager.bindPresetKey("exitapp", exitapp_name)
+        } catch as err {
+            MsgBox("Error: " err.Message, title)
+            return
+        }
+
+        ToggleKeyEdit.Value := toggle_name
+        ReloadKeyEdit.Value := reload_name
+        ExitAppKeyEdit.Value := exitapp_name
+
+        PresetKeysGUI.Destroy() 
+    }
+}
+
+GUISaveSettings(*) {
     manager.saveKeys()
-    MsgBox("Hotkeys saved", title)
+    IniWrite(manager.toggle_key, "settings.ini", "KEYBINDS", "toggle_key")
+    IniWrite(manager.reload_key, "settings.ini", "KEYBINDS", "reload_key")
+    IniWrite(manager.exitapp_key, "settings.ini", "KEYBINDS", "exitapp_key")
+    IniWrite(manager.autoklicker, "settings.ini", "SETTINGS", "autoklicker")
+    MsgBox("Hotkeys & Settings saved", title)
 }
 
 updateKeyList() {
@@ -196,5 +265,4 @@ showHelpGUI(*) {
     )
 
     HelpGUI.Show()
-
 }

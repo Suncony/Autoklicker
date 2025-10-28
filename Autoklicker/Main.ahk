@@ -1,19 +1,17 @@
 ﻿#Requires AutoHotkey v2.0
-#Include "KeysManager.ahk"
-#NoTrayIcon
 #UseHook
+#NoTrayIcon
 SendMode "Event"
 
-*F7::Reload
-*F8::ExitApp
-
+#Include "KeysManager.ahk"
 manager := KeysManager()
+
+Hotkey("*" manager.reload_key, (*) => Reload())
+Hotkey("*" manager.exitapp_key, (*) => ExitApp())
+Hotkey("*" manager.toggle_key, (*) => manager.toggleKeyBinds())
+
 manager.loadKeys()
 for k in manager.keys
     manager.bindKey(k)
-
-*F1:: {
-    manager.toggleKeyBinds()
-}
 
 #Include "GUI.ahk"
